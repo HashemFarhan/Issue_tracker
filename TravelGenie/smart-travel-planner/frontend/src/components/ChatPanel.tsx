@@ -7,14 +7,61 @@ interface Message {
   content: string;
 }
 
+interface Activity {
+  name: string;
+  type: string;
+  cost: number;
+}
+
+interface DayPlan {
+  day: number;
+  activities: Activity[];
+  hotel: string;
+  cost_estimate: number;
+}
+
+interface Itinerary {
+  destination: string;
+  duration: number;
+  budget: number;
+  flights: Array<{
+    origin: string;
+    destination: string;
+    airline: string;
+    price: number;
+    duration: string;
+  }>;
+  hotels: Array<{
+    name: string;
+    price_per_night: number;
+    rating: number;
+  }>;
+  daily_plan: DayPlan[];
+}
+
 interface ChatPanelProps {
-  onItineraryGenerated: (itinerary: any) => void;
+  onItineraryGenerated: (itinerary: Itinerary) => void;
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({ onItineraryGenerated }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const formatItineraryMessage = (itinerary: Itinerary): string => {
+    let message = `I've created a ${itinerary.duration}-day itinerary for ${itinerary.destination}!\n\n`;
+    message += `Total Budget: $${itinerary.budget}\n\n`;
+    message += `Flight: ${itinerary.flights[0].airline} from ${itinerary.flights[0].origin} to ${itinerary.flights[0].destination} ($${itinerary.flights[0].price})\n\n`;
+    message += `Hotel: ${itinerary.hotels[0].name} ($${itinerary.hotels[0].price_per_night}/night)\n\n`;
+    message += "Daily Plan:\n";
+    itinerary.daily_plan.forEach(day => {
+      message += `\nDay ${day.day}:\n`;
+      message += `Hotel: ${day.hotel}\n`;
+      message += `Activities:\n${day.activities.map(act => `- ${act.name} ($${act.cost})`).join('\n')}\n`;
+      message += `Estimated Cost: $${day.cost_estimate}\n`;
+    });
+    return message;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +77,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onItineraryGenerated }) => {
         message: input
       });
 
-      if (response.data && response.data.daily_plan) {
+      if (response.data) {
+        const itinerary = response.data as Itinerary;
         const assistantMessage: Message = {
           role: 'assistant',
-          content: "I've generated a travel itinerary for you!"
+          content: formatItineraryMessage(itinerary)
         };
         setMessages(prev => [...prev, assistantMessage]);
-        onItineraryGenerated(response.data);
+        onItineraryGenerated(itinerary);
       } else {
         throw new Error('Invalid response format');
       }
@@ -57,7 +105,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ onItineraryGenerated }) => {
       <div className={styles.chatHistory}>
         {messages.map((message, index) => (
           <div key={index} className={`${styles.message} ${styles[message.role]}`}>
-            {message.content}
+            {message.content.split('\n').map((line, i) => (
+              <React.Fragment key={i}>
+                {line}
+                <br />
+              </React.Fragment>
+            ))}
           </div>
         ))}
         {isLoading && <div className={`${styles.message} ${styles.assistant}`}>Generating itinerary...</div>}

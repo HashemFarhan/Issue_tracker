@@ -3,8 +3,40 @@ import ChatPanel from './components/ChatPanel';
 import ItineraryDisplay from './components/ItineraryDisplay';
 import './App.css';
 
+interface Activity {
+  name: string;
+  type: string;
+  cost: number;
+}
+
+interface DayPlan {
+  day: number;
+  activities: Activity[];
+  hotel: string;
+  cost_estimate: number;
+}
+
+interface Itinerary {
+  destination: string;
+  duration: number;
+  budget: number;
+  flights: Array<{
+    origin: string;
+    destination: string;
+    airline: string;
+    price: number;
+    duration: string;
+  }>;
+  hotels: Array<{
+    name: string;
+    price_per_night: number;
+    rating: number;
+  }>;
+  daily_plan: DayPlan[];
+}
+
 function App() {
-  const [itinerary, setItinerary] = useState(null);
+  const [itinerary, setItinerary] = useState<Itinerary | null>(null);
 
   return (
     <div className="app">
