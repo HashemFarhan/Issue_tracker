@@ -33,7 +33,7 @@ class ChatMessage(BaseModel):
 async def create_itinerary(chat_message: ChatMessage):
     try:
         logger.info(f"Received request to generate itinerary for message: {chat_message.message}")
-        itinerary = await generate_itinerary(chat_message.message)
+        itinerary = generate_itinerary(chat_message.message)
         logger.info("Successfully generated itinerary")
         return itinerary
     except ValueError as e:

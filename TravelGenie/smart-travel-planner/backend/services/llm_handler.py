@@ -131,15 +131,9 @@ def generate_itinerary(message: str) -> Dict[str, Any]:
     try:
         # Load sample data
         sample_data = load_sample_data()
-
-        print(sample_data)
         
         # Extract trip details
         trip_details = extract_trip_details(message)
-        print()
-        print('TRIP DETAILS', trip_details)
-
-        print('TRIP DETAILS FLIGHTS', trip_details.flights[0]['destination'])
         
         # Generate itinerary using GPT
         prompt = f"""
@@ -147,13 +141,9 @@ def generate_itinerary(message: str) -> Dict[str, Any]:
         Destination: {trip_details.flights[0]['destination']}
         Duration: {trip_details.flights[0]['duration']} days
         Budget: ${trip_details.budget}
-        
-        
-        You have two options:
-        1. If data for a certain field is not avaialble in the sample data, generate a random data that meets the requirements.
-        2. Use the following sample data for flights, hotels, attractions, and restaurants:=:
-        {json.dumps(sample_data, indent=2)}
-        
+
+        If you cannot find data for a certain field, generate random data that meets the requirements. and add it to the sample data. 
+        if random data is generated, still return the data in the correct format.
         Return a JSON object with this structure:
         {{
             "destination": "string",
@@ -179,18 +169,32 @@ def generate_itinerary(message: str) -> Dict[str, Any]:
             temperature=0.7
         )
         
-        try:
-            # return json.loads(response.choices[0].message.content)
-            print('RESPONSE1', response)
-            return response
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse itinerary response as JSON: {str(e)}")
-            raise ValueError("Failed to parse itinerary from GPT response")
+        # Convert response to proper format
+        itinerary = {
+            "destination": response.flights[0]['destination'],
+            "duration": int(response.flights[0]['duration'].replace('h', '')),
+            "budget": response.budget,
+            "flights": response.flights,
+            "hotels": response.hotels,
+            "daily_plan": [
+                {
+                    "day": i + 1,
+                    "activities": [
+                        f"Visit {attraction['name']}" for attraction in response.attractions
+                    ],
+                    "hotel": response.hotels[0]['name'],
+                    "cost_estimate": sum(att['cost'] for att in response.attractions) + response.hotels[0]['price_per_night']
+                }
+                for i in range(int(response.flights[0]['duration'].replace('h', '')))
+            ]
+        }
+        
+        return itinerary
     except Exception as e:
         logger.error(f"Error in generate_itinerary: {str(e)}")
-        raise 
+        raise
 
 ## NEXT: MAKE SURE RESPONSE IS CONSISTENT / INTEGRARE WITH UI
 
 
-print(generate_itinerary("I want to go to France for the duration of 5 days with a budget of $1000"))
+# print(generate_itinerary("I want to go to France for the duration of 5 days with a budget of $1000"))
