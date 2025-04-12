@@ -1,0 +1,23 @@
+[
+  {
+    "origin": "NYC",
+    "destination": "Rome",
+    "airline": "SimAir",
+    "price": 350,
+    "duration": "9h"
+  },
+  {
+    "origin": "LAX",
+    "destination": "Rome",
+    "airline": "SimAir",
+    "price": 420,
+    "duration": "12h"
+  },
+  {
+    "origin": "London",
+    "destination": "Rome",
+    "airline": "SimAir",
+    "price": 120,
+    "duration": "2h"
+  }
+] 
